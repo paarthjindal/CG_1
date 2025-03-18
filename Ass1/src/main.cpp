@@ -168,23 +168,41 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
+// Add this function near your other utility functions
+void clearSelection() {
+    if (game->getSelectedPosition().isValid()) {
+        game->selectPosition(-1, -1); // Clear selection
+        std::cout << "Selection cleared" << std::endl;
+    }
+}
+
+// In your mouse_button_callback function, add a right-click handler to clear selection
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+    if (action == GLFW_PRESS) {
         // Get cursor position
         double xpos, ypos;
         glfwGetCursorPos(window, &xpos, &ypos);
 
-        // Convert screen coordinates to board position
-        Position boardPos = renderer->getBoardPosition(static_cast<int>(xpos), static_cast<int>(ypos), *game);
+        // Convert screen coordinates to game coordinates
+        int boardSize = game->getBoardSize();
+        float cellSize = 1.6f / boardSize;
 
-        // Process the click
-        if (boardPos.isValid()) {
-            // If no piece is selected, try to select one
-            if (!game->getSelectedPosition().isValid()) {
-                game->selectPosition(boardPos.row, boardPos.col);
-            } else {
-                // If a piece is already selected, try to move it
-                game->tryMove(boardPos.row, boardPos.col);
+        // Use WINDOW_WIDTH and WINDOW_HEIGHT instead of windowWidth and windowHeight
+        int col = static_cast<int>((xpos / WINDOW_WIDTH * 2.0 - 1.0 + 0.8) * boardSize / 1.6);
+        int row = static_cast<int>((1.0 - ypos / WINDOW_HEIGHT * 2.0 + 0.8) * boardSize / 1.6);
+
+        // Right-click to clear selection
+        if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+            clearSelection();
+            return;
+        }
+
+        // Left-click to make selection or move
+        if (button == GLFW_MOUSE_BUTTON_LEFT) {
+            bool stateChanged = game->processClick(row, col);
+            if (!stateChanged) {
+                // If click was invalid, provide feedback
+                std::cout << "Invalid selection or move attempt at (" << row << "," << col << ")" << std::endl;
             }
         }
     }
@@ -224,25 +242,26 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 //         }
 //     }
 // }
-void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
-{
-    if (action == GLFW_PRESS)
-    {
-        switch (key)
-        {
-        case GLFW_KEY_ESCAPE:
-            glfwSetWindowShouldClose(window, true);
-            break;
-        case GLFW_KEY_U:
-            game->undoMove();
-            break;
-        case GLFW_KEY_R:
-            game->redoMove();
-            break;
-        case GLFW_KEY_N:
-            game->reset();
-            game->startTimer();
-            break;
+// Add or update your key callback function
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (action == GLFW_PRESS) {
+        switch (key) {
+            case GLFW_KEY_ESCAPE:
+                glfwSetWindowShouldClose(window, true);
+                break;
+            case GLFW_KEY_C:  // 'C' to clear selection
+                clearSelection();
+                break;
+            case GLFW_KEY_U:  // 'U' to undo
+                game->undoMove();
+                break;
+            case GLFW_KEY_R:  // 'R' to redo
+                game->redoMove();
+                break;
+            case GLFW_KEY_N:  // 'N' for new game
+                game->reset();
+                game->startTimer();
+                break;
         }
     }
 }

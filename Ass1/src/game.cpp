@@ -318,6 +318,12 @@ bool MarbleSolitaire::processClick(int row, int col) {
     // Check if clicked on an invalid position
     if (!isValidPosition(row, col)) {
         std::cout << "Invalid position clicked" << std::endl;
+        // Deselect current marble if we click outside the valid board area
+        if (selectedPosition.isValid()) {
+            selectedPosition = Position(-1, -1);
+            std::cout << "Marble deselected after clicking invalid position" << std::endl;
+            return true;
+        }
         return false;
     }
 
@@ -327,6 +333,12 @@ bool MarbleSolitaire::processClick(int row, int col) {
         if (board[row][col] == MARBLE) {
             selectedPosition = Position(row, col);
             std::cout << "Selected marble at (" << row << "," << col << ")" << std::endl;
+
+            // Check if this marble has any valid moves
+            std::vector<Position> validMoves = getValidMovesForSelected();
+            if (validMoves.empty()) {
+                std::cout << "Warning: This marble has no valid moves!" << std::endl;
+            }
             return true;
         } else {
             std::cout << "Cannot select empty or invalid position" << std::endl;
@@ -345,6 +357,12 @@ bool MarbleSolitaire::processClick(int row, int col) {
         else if (board[row][col] == MARBLE) {
             selectedPosition = Position(row, col);
             std::cout << "Selected new marble at (" << row << "," << col << ")" << std::endl;
+
+            // Check if this marble has any valid moves
+            std::vector<Position> validMoves = getValidMovesForSelected();
+            if (validMoves.empty()) {
+                std::cout << "Warning: This marble has no valid moves!" << std::endl;
+            }
             return true;
         }
         // If clicked on an empty space, attempt to move there
@@ -353,7 +371,10 @@ bool MarbleSolitaire::processClick(int row, int col) {
             if (moveSuccessful) {
                 std::cout << "Move successful" << std::endl;
             } else {
-                std::cout << "Invalid move attempted" << std::endl;
+                std::cout << "Invalid move attempted - deselecting marble" << std::endl;
+                // Deselect the marble after an invalid move attempt
+                selectedPosition = Position(-1, -1);
+                return true; // Return true to update the UI
             }
             return moveSuccessful;
         }
@@ -361,6 +382,7 @@ bool MarbleSolitaire::processClick(int row, int col) {
 
     return false;
 }
+
 bool MarbleSolitaire::makeMove(const Position& from, const Position& to) {
     return makeMove(from.row, from.col, to.row, to.col);
     // if (!isValidMove(from, to)) {
