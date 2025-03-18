@@ -1,37 +1,41 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+// #include <../external/imgui/imgui_impl_glfw.h>
+// #include <imgui.h>
 #include <../external/imgui/imgui.h>
 #include <../external/imgui/backends/imgui_impl_glfw.h>
 #include <../external/imgui/backends/imgui_impl_opengl3.h>
 #include <iostream>
 #include <string>
 
-#include "game.h"
-#include "renderer.h"
+#include "../include/game.h"
+#include "../include/renderer.h"
 
 // Window dimensions and title
-const char* WINDOW_TITLE = "Marble Solitaire";
+const char *WINDOW_TITLE = "Marble Solitaire";
 const int WINDOW_WIDTH = 800;
 const int WINDOW_HEIGHT = 800;
 
 // Global objects
-MarbleSolitaire* game = nullptr;
-Renderer* renderer = nullptr;
-GLFWwindow* window = nullptr;
+MarbleSolitaire *game = nullptr;
+Renderer *renderer = nullptr;
+GLFWwindow *window = nullptr;
 
 // Function prototypes
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+void framebuffer_size_callback(GLFWwindow *window, int width, int height);
+void mouse_button_callback(GLFWwindow *window, int button, int action, int mods);
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void initializeGLFW();
 void initializeImGui();
 void mainLoop();
 void cleanup();
 
-int main() {
+int main()
+{
     // Initialize GLFW and create window
     initializeGLFW();
-    if (!window) {
+    if (!window)
+    {
         return -1;
     }
 
@@ -54,9 +58,11 @@ int main() {
     return 0;
 }
 
-void initializeGLFW() {
+void initializeGLFW()
+{
     // Initialize GLFW
-    if (!glfwInit()) {
+    if (!glfwInit())
+    {
         std::cerr << "Failed to initialize GLFW" << std::endl;
         return;
     }
@@ -68,7 +74,8 @@ void initializeGLFW() {
 
     // Create window
     window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE, NULL, NULL);
-    if (!window) {
+    if (!window)
+    {
         std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return;
@@ -84,7 +91,8 @@ void initializeGLFW() {
 
     // Initialize GLEW
     glewExperimental = GL_TRUE;
-    if (glewInit() != GLEW_OK) {
+    if (glewInit() != GLEW_OK)
+    {
         std::cerr << "Failed to initialize GLEW" << std::endl;
         return;
     }
@@ -93,7 +101,8 @@ void initializeGLFW() {
     glEnable(GL_DEPTH_TEST);
 }
 
-void initializeImGui() {
+void initializeImGui()
+{
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -107,8 +116,11 @@ void initializeImGui() {
     ImGui::StyleColorsDark();
 }
 
-void mainLoop() {
-    while (!glfwWindowShouldClose(window)) {
+void mainLoop()
+{
+    game->startTimer();
+    while (!glfwWindowShouldClose(window))
+    {
         // Poll and handle events
         glfwPollEvents();
 
@@ -136,7 +148,8 @@ void mainLoop() {
     }
 }
 
-void cleanup() {
+void cleanup()
+{
     // Cleanup ImGui
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -150,7 +163,8 @@ void cleanup() {
     glfwTerminate();
 }
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+void framebuffer_size_callback(GLFWwindow *window, int width, int height)
+{
     glViewport(0, 0, width, height);
 }
 
@@ -175,23 +189,60 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
         }
     }
 }
+// Add this function if it doesn't exist
+// void refreshWindow()
+// {
+//     // Force window refresh after game state changes
+//     glfwPollEvents();
+//     renderer->renderGame(*game);
+//     glfwSwapBuffers(window);
+// }
+// // Modify your mouse callback to use it
+// // Modify the mouse callback to use the correct window size variables
+// void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
+// {
+//     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+//     {
+//         // Get cursor position
+//         double xpos, ypos;
+//         glfwGetCursorPos(window, &xpos, &ypos);
 
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if (action == GLFW_PRESS) {
-        switch (key) {
-            case GLFW_KEY_ESCAPE:
-                glfwSetWindowShouldClose(window, true);
-                break;
-            case GLFW_KEY_U:
-                game->undoMove();
-                break;
-            case GLFW_KEY_R:
-                game->redoMove();
-                break;
-            case GLFW_KEY_N:
-                game->reset();
-                game->startTimer();
-                break;
+//         // Convert screen coordinates to game coordinates
+//         int boardSize = game->getBoardSize();
+//         float cellSize = 1.6f / boardSize;
+
+//         // Use WINDOW_WIDTH and WINDOW_HEIGHT instead of windowWidth and windowHeight
+//         int col = (int)((xpos / WINDOW_WIDTH + 0.8f) / cellSize);
+//         int row = (int)((-ypos / WINDOW_HEIGHT + 0.8f) / cellSize);
+
+//         // Process click
+//         bool stateChanged = game->processClick(row, col);
+//         if (stateChanged)
+//         {
+//             std::cout << "Game state updated, forcing refresh" << std::endl;
+//             refreshWindow(); // Force window update immediately
+//         }
+//     }
+// }
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
+{
+    if (action == GLFW_PRESS)
+    {
+        switch (key)
+        {
+        case GLFW_KEY_ESCAPE:
+            glfwSetWindowShouldClose(window, true);
+            break;
+        case GLFW_KEY_U:
+            game->undoMove();
+            break;
+        case GLFW_KEY_R:
+            game->redoMove();
+            break;
+        case GLFW_KEY_N:
+            game->reset();
+            game->startTimer();
+            break;
         }
     }
 }

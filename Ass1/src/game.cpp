@@ -362,36 +362,37 @@ bool MarbleSolitaire::processClick(int row, int col) {
     return false;
 }
 bool MarbleSolitaire::makeMove(const Position& from, const Position& to) {
-    if (!isValidMove(from, to)) {
-        return false;
-    }
+    return makeMove(from.row, from.col, to.row, to.col);
+    // if (!isValidMove(from, to)) {
+    //     return false;
+    // }
 
-    // Get jumped position
-    Position jumped = getJumpedPosition(from, to);
+    // // Get jumped position
+    // Position jumped = getJumpedPosition(from, to);
 
-    // Move the marble
-    board[from.row][from.col] = EMPTY;
-    board[to.row][to.col] = MARBLE;
-    board[jumped.row][jumped.col] = EMPTY;
+    // // Move the marble
+    // board[from.row][from.col] = EMPTY;
+    // board[to.row][to.col] = MARBLE;
+    // board[jumped.row][jumped.col] = EMPTY;
 
-    // Create move record
-    Move move(from, to, jumped);
+    // // Create move record
+    // Move move(from, to, jumped);
 
-    // Update move history
-    moveHistory.push(move);
+    // // Update move history
+    // moveHistory.push(move);
 
-    // Clear redo stack when a new move is made
-    while (!redoStack.empty()) {
-        redoStack.pop();
-    }
+    // // Clear redo stack when a new move is made
+    // while (!redoStack.empty()) {
+    //     redoStack.pop();
+    // }
 
-    // Update remaining marbles
-    remainingMarbles--;
+    // // Update remaining marbles
+    // remainingMarbles--;
 
-    // Clear selection
-    selectedPosition = Position(-1, -1);
+    // // Clear selection
+    // selectedPosition = Position(-1, -1);
 
-    return true;
+    // return true;
 }
 
 bool MarbleSolitaire::tryMove(int row, int col) {
@@ -406,6 +407,7 @@ bool MarbleSolitaire::tryMove(int row, int col) {
 
 bool MarbleSolitaire::undoMove() {
     if (moveHistory.empty()) {
+        std::cout << "No moves to undo" << std::endl;
         return false;
     }
 
@@ -427,11 +429,18 @@ bool MarbleSolitaire::undoMove() {
     // Clear selection
     selectedPosition = Position(-1, -1);
 
+    // Print board after undo - ADD THIS
+    std::cout << "\n=== BOARD AFTER UNDO ===\n";
+    printBoard();
+    std::cout << "Remaining marbles: " << remainingMarbles << std::endl;
+    std::cout << "======================\n" << std::endl;
+
     return true;
 }
 
 bool MarbleSolitaire::redoMove() {
     if (redoStack.empty()) {
+        std::cout << "No moves to redo" << std::endl;
         return false;
     }
 
@@ -453,9 +462,14 @@ bool MarbleSolitaire::redoMove() {
     // Clear selection
     selectedPosition = Position(-1, -1);
 
+    // Print board after redo - ADD THIS
+    std::cout << "\n=== BOARD AFTER REDO ===\n";
+    printBoard();
+    std::cout << "Remaining marbles: " << remainingMarbles << std::endl;
+    std::cout << "======================\n" << std::endl;
+
     return true;
 }
-
 bool MarbleSolitaire::gameOver() const {
     // Game is over if there are no valid moves left
     return !hasValidMoves();

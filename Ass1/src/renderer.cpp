@@ -1,4 +1,4 @@
-#include "renderer.h"
+#include "../include/renderer.h"
 #include <../external/imgui/imgui.h>
 #include <cmath>
 #include <string>
@@ -72,32 +72,45 @@ void Renderer::createSquare() {
 }
 
 void Renderer::createCircle() {
-    // Same vertices as the square, will be converted to circle in the fragment shader
+    std::cout << "Creating circle geometry..." << std::endl;
+
+    // Define vertices for a square
     float vertices[] = {
         -0.5f, -0.5f,  // Bottom left
          0.5f, -0.5f,  // Bottom right
          0.5f,  0.5f,  // Top right
+        -0.5f, -0.5f,  // Bottom left (repeated)
+         0.5f,  0.5f,  // Top right (repeated)
         -0.5f,  0.5f   // Top left
     };
 
-    // Create and configure VAO for circle
+    // Generate VAO and VBO
     glGenVertexArrays(1, &circleVAO);
+    glGenBuffers(1, &circleVBO);
+
+    // Bind VAO first
     glBindVertexArray(circleVAO);
 
-    // Create and configure VBO
-    glGenBuffers(1, &circleVBO);
+    // Bind and setup VBO
     glBindBuffer(GL_ARRAY_BUFFER, circleVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    // Configure vertex attributes
+    // Set vertex attribute pointers
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
     // Unbind
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
-}
 
+    // Check for OpenGL errors
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR) {
+        std::cout << "OpenGL error when creating circle: " << error << std::endl;
+    } else {
+        std::cout << "Circle geometry created successfully" << std::endl;
+    }
+}
 void Renderer::renderGame(const MarbleSolitaire& game) {
     // Debug output - only print occasionally to avoid spam
     static int frameCounter = 0;
@@ -153,6 +166,20 @@ void Renderer::renderBoard(const MarbleSolitaire& game) {
     }
 }
 void Renderer::renderMarbles(const MarbleSolitaire& game) {
+     // Debug: Count marbles to render
+     int marbleCount = 0;
+     for (int row = 0; row < game.getBoardSize(); row++) {
+         for (int col = 0; col < game.getBoardSize(); col++) {
+             if (game.getCell(row, col) == MARBLE) {
+                 marbleCount++;
+             }
+         }
+     }
+     static int lastRenderedCount = -1;
+     if (marbleCount != lastRenderedCount) {
+         std::cout << "About to render " << marbleCount << " marbles" << std::endl;
+         lastRenderedCount = marbleCount;
+     }
     // Use orthographic projection for 2D rendering
     glm::mat4 projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f);
 
