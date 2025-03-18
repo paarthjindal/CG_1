@@ -187,9 +187,21 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
         int boardSize = game->getBoardSize();
         float cellSize = 1.6f / boardSize;
 
-        // Use WINDOW_WIDTH and WINDOW_HEIGHT instead of windowWidth and windowHeight
-        int col = static_cast<int>((xpos / WINDOW_WIDTH * 2.0 - 1.0 + 0.8) * boardSize / 1.6);
-        int row = static_cast<int>((1.0 - ypos / WINDOW_HEIGHT * 2.0 + 0.8) * boardSize / 1.6);
+        // Fix the coordinate calculation - the y-axis was inverted
+        float boardWidth = 1.6f;
+        float boardOriginX = -0.8f;
+        float boardOriginY = 0.8f;
+
+        // Normalized device coordinates (from -1 to 1)
+        float ndcX = (2.0f * xpos / WINDOW_WIDTH) - 1.0f;
+        float ndcY = 1.0f - (2.0f * ypos / WINDOW_HEIGHT); // Flip Y since screen Y is from top to bottom
+
+        // Convert to board coordinates
+        int col = static_cast<int>((ndcX - boardOriginX) / cellSize);
+        int row = static_cast<int>((boardOriginY - ndcY) / cellSize);
+
+        std::cout << "Screen pos: (" << xpos << ", " << ypos
+                  << ") -> Board pos: (" << row << ", " << col << ")" << std::endl;
 
         // Right-click to clear selection
         if (button == GLFW_MOUSE_BUTTON_RIGHT) {
