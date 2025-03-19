@@ -205,27 +205,27 @@ void Renderer::renderMarbles(const MarbleSolitaire &game)
         std::cout << "About to render " << marbleCount << " marbles" << std::endl;
         lastRenderedCount = marbleCount;
     }
-    // Use orthographic projection for 2D rendering
+    // // Use orthographic projection for 2D rendering
     glm::mat4 projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f);
-    squareShader.use();
-    squareShader.setMat4("projection", projection);
+    // squareShader.use();
+    // squareShader.setMat4("projection", projection);
 
-    // Create a bright green square in the center of screen
-    glm::mat4 testModel = glm::mat4(1.0f);
-    testModel = glm::translate(testModel, glm::vec3(0.0f, 0.0f, 0.0f)); // Center of screen
-    testModel = glm::scale(testModel, glm::vec3(0.5f, 0.5f, 1.0f)); // Large square
-    squareShader.setMat4("transform", testModel);
-    squareShader.setVec4("color", glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)); // Bright green
+    // // Create a bright green square in the center of screen
+    // glm::mat4 testModel = glm::mat4(1.0f);
+    // testModel = glm::translate(testModel, glm::vec3(0.0f, 0.0f, 0.0f)); // Center of screen
+    // testModel = glm::scale(testModel, glm::vec3(0.5f, 0.5f, 1.0f)); // Large square
+    // squareShader.setMat4("transform", testModel);
+    // squareShader.setVec4("color", glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)); // Bright green
 
-    // Draw the test square
-    glBindVertexArray(squareVAO);
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    // // Draw the test square
+    // glBindVertexArray(squareVAO);
+    // glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
-    // Check for OpenGL errors
-    GLenum err = glGetError();
-    if (err != GL_NO_ERROR) {
-        std::cerr << "OpenGL error during test square rendering: " << err << std::endl;
-    }
+    // // Check for OpenGL errors
+    // GLenum err = glGetError();
+    // if (err != GL_NO_ERROR) {
+    //     std::cerr << "OpenGL error during test square rendering: " << err << std::endl;
+    // }
     // Calculate cell size based on board size
     float cellSize = 1.6f / game.getBoardSize();
     float marbleSize = cellSize * 0.7f; // Slightly smaller than cells
@@ -237,11 +237,11 @@ void Renderer::renderMarbles(const MarbleSolitaire &game)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // Bind circle shader for drawing marbles
-    // circleShader.use();
-    // circleShader.setMat4("projection", projection);
+    circleShader.use();
+    circleShader.setMat4("projection", projection);
     // Try using the square shader first (for debugging)
-    squareShader.use();
-    squareShader.setMat4("projection", projection);
+    // squareShader.use();
+    // squareShader.setMat4("projection", projection);
 
     // Debug output - print the first marble position
     // static bool first_log_done = false;
@@ -257,35 +257,35 @@ void Renderer::renderMarbles(const MarbleSolitaire &game)
                 float x = -0.8f + cellSize * col + cellSize * 0.5f;
                 float y = 0.8f - cellSize * row - cellSize * 0.5f;
 
-                // Print first few marble positions for debugging
-                if (debugCount < 3) {
-                    std::cout << "Marble " << debugCount << " at position (" << row << "," << col
-                              << ") rendering at screen position (" << x << "," << y << ")" << std::endl;
-                    debugCount++;
-                }
+                // // Print first few marble positions for debugging
+                // if (debugCount < 3) {
+                //     std::cout << "Marble " << debugCount << " at position (" << row << "," << col
+                //               << ") rendering at screen position (" << x << "," << y << ")" << std::endl;
+                //     debugCount++;
+                // }
 
                 // Set transformation
                 glm::mat4 model = glm::mat4(1.0f);
                 model = glm::translate(model, glm::vec3(x, y, 0.1f));
                 model = glm::scale(model, glm::vec3(marbleSize, marbleSize, 1.0f));
-                squareShader.setMat4("transform", model);
-                // Alternate colors for debugging
-                float r = ((row + col) % 2 == 0) ? 1.0f : 0.8f;
-                float b = ((row + col) % 2 == 0) ? 0.0f : 0.8f;
-                // Set marble color to bright RED (for visibility)
-                squareShader.setVec4("color", glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+                // squareShader.setMat4("transform", model);
+                // // Alternate colors for debugging
+                // float r = ((row + col) % 2 == 0) ? 1.0f : 0.8f;
+                // float b = ((row + col) % 2 == 0) ? 0.0f : 0.8f;
+                // // Set marble color to bright RED (for visibility)
+                // squareShader.setVec4("color", glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
 
-                // Draw square (instead of circle) for testing
-                glBindVertexArray(squareVAO);
-                glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-                // circleShader.setMat4("transform", model);
+                // // Draw square (instead of circle) for testing
+                // glBindVertexArray(squareVAO);
+                // glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+                circleShader.setMat4("transform", model);
 
                 // // Set marble color to bright blue (different color than squares)
-                // circleShader.setVec4("color", glm::vec4(0.0f, 0.4f, 1.0f, 1.0f));
+                circleShader.setVec4("color", glm::vec4(0.0f, 0.4f, 1.0f, 1.0f));
 
                 // // Draw circle
-                // glBindVertexArray(circleVAO);
-                // glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+                glBindVertexArray(circleVAO);
+                glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
                 // glDrawElements(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, 0);
             }
         }
