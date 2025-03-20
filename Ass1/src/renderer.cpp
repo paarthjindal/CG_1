@@ -3,7 +3,8 @@
 #include <cmath>
 #include <string>
 #include <glm/gtc/matrix_transform.hpp>
-
+#include <../include/renderer.h>
+#include <../include/theme.h>
 Renderer::Renderer(int width, int height) : windowWidth(width), windowHeight(height)
 {
     // Initialize member variables
@@ -19,6 +20,12 @@ Renderer::~Renderer()
     glDeleteBuffers(1, &circleVBO);
 }
 #include <unistd.h>
+
+
+void Renderer::setTheme(const Theme& theme) {
+    currentTheme = theme;
+}
+
 void Renderer::init()
 {
     char cwd[1024];
@@ -38,6 +45,10 @@ void Renderer::init()
     circleShader.loadFromFile((basePath + "circle.vs").c_str(),
                               (basePath + "circle.fs").c_str());
 
+                               // Add this line to load the highlight shader
+    highlightShader.loadFromFile((basePath + "square.vs").c_str(),
+    (basePath + "square.fs").c_str());  // We can reuse square shaders
+
     // Add this after shader loading in init():
     // if (!circleShader.isValid())
     // {
@@ -54,6 +65,8 @@ void Renderer::init()
     // Create geometry
     createSquare();
     createCircle();
+    createHighlight();  // Make sure this method exists
+
 }
 void Renderer::createSquare()
 {
@@ -119,6 +132,30 @@ void Renderer::createCircle()
     std::cout << "Circle geometry created successfully" << std::endl;
 }
 
+void Renderer::createHighlight()
+{
+    // We can reuse squareVAO for the highlight, but if you want a dedicated VAO:
+    float vertices[] = {
+        -0.5f, -0.5f,  // Bottom left
+         0.5f, -0.5f,  // Bottom right
+         0.5f,  0.5f,  // Top right
+        -0.5f,  0.5f   // Top left
+    };
+
+    glGenVertexArrays(1, &highlightVAO);
+    glBindVertexArray(highlightVAO);
+
+    glGenBuffers(1, &highlightVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, highlightVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+}
+
 void Renderer::renderGame(const MarbleSolitaire &game)
 {
     // Debug output - only print occasionally to avoid spam
@@ -128,9 +165,14 @@ void Renderer::renderGame(const MarbleSolitaire &game)
         std::cout << "Rendering game with " << game.getRemainingMarbles() << " marbles" << std::endl;
     }
 
-    // Clear the screen
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    // Clear the screen with the theme background color
+    glClearColor(
+        currentTheme.BACKGROUND_COLOR.r,
+        currentTheme.BACKGROUND_COLOR.g,
+        currentTheme.BACKGROUND_COLOR.b,
+        currentTheme.BACKGROUND_COLOR.a
+    );
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     renderBoard(game);
     renderMarbles(game);
@@ -138,39 +180,36 @@ void Renderer::renderGame(const MarbleSolitaire &game)
     renderGameInfo(game);
 }
 
-void Renderer::renderBoard(const MarbleSolitaire &game)
-{
+void Renderer::renderBoard(const MarbleSolitaire& game) {
     // Use orthographic projection for 2D rendering
     glm::mat4 projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f);
 
-    // Calculate cell size based on board size
-    float cellSize = 1.6f / game.getBoardSize();
-
-    // Bind square shader for drawing the board squares
+    // Set up shader
     squareShader.use();
     squareShader.setMat4("projection", projection);
 
-    // Render board cells
-    for (int row = 0; row < game.getBoardSize(); row++)
-    {
-        for (int col = 0; col < game.getBoardSize(); col++)
-        {
-            // Skip invalid positions
+    // Calculate cell size based on board size and theme parameters
+    float cellSize = currentTheme.BOARD_WIDTH / game.getBoardSize();
+
+    // Render each cell of the board
+    for (int row = 0; row < game.getBoardSize(); row++) {
+        for (int col = 0; col < game.getBoardSize(); col++) {
             if (game.getCell(row, col) == INVALID)
                 continue;
 
-            // Calculate position
-            float x = -0.8f + cellSize * col + cellSize * 0.5f;
-            float y = 0.8f - cellSize * row - cellSize * 0.5f;
+            // Calculate position using theme constants
+            float x = currentTheme.BOARD_ORIGIN_X + cellSize * col + cellSize * 0.5f;
+            float y = currentTheme.BOARD_ORIGIN_Y - cellSize * row - cellSize * 0.5f;
 
             // Set transformation
             glm::mat4 model = glm::mat4(1.0f);
             model = glm::translate(model, glm::vec3(x, y, 0.0f));
-            model = glm::scale(model, glm::vec3(cellSize * 0.9f, cellSize * 0.9f, 1.0f));
+            model = glm::scale(model, glm::vec3(cellSize * currentTheme.CELL_SCALE_FACTOR,
+                                                cellSize * currentTheme.CELL_SCALE_FACTOR, 1.0f));
             squareShader.setMat4("transform", model);
 
-            // Set color based on cell type
-            squareShader.setVec4("color", glm::vec4(0.6f, 0.6f, 0.6f, 1.0f)); // Board color
+            // Set color from theme
+            squareShader.setVec4("color", currentTheme.BOARD_COLOR);
 
             // Draw square
             glBindVertexArray(squareVAO);
@@ -178,6 +217,9 @@ void Renderer::renderBoard(const MarbleSolitaire &game)
         }
     }
 }
+
+
+
 void Renderer::renderMarbles(const MarbleSolitaire &game)
 {
     // Debug: Count marbles to render
@@ -220,8 +262,9 @@ void Renderer::renderMarbles(const MarbleSolitaire &game)
     //     std::cerr << "OpenGL error during test square rendering: " << err << std::endl;
     // }
     // Calculate cell size based on board size
-    float cellSize = 1.6f / game.getBoardSize();
-    float marbleSize = cellSize * 0.7f; // Slightly smaller than cells
+    // Calculate cell size based on board size and theme parameters
+    float cellSize = currentTheme.BOARD_WIDTH / game.getBoardSize();
+    float marbleSize = cellSize * currentTheme.MARBLE_SCALE_FACTOR;
     // Enable depth testing to ensure proper ordering
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
@@ -247,9 +290,9 @@ void Renderer::renderMarbles(const MarbleSolitaire &game)
             if (game.getCell(row, col) == MARBLE)
             {
                 // Calculate position
-                float x = -0.8f + cellSize * col + cellSize * 0.5f;
-                float y = 0.8f - cellSize * row - cellSize * 0.5f;
-
+                // Calculate position using theme constants
+                float x = currentTheme.BOARD_ORIGIN_X + cellSize * col + cellSize * 0.5f;
+                float y = currentTheme.BOARD_ORIGIN_Y - cellSize * row - cellSize * 0.5f;
                 // // Print first few marble positions for debugging
                 // if (debugCount < 3) {
                 //     std::cout << "Marble " << debugCount << " at position (" << row << "," << col
@@ -259,7 +302,7 @@ void Renderer::renderMarbles(const MarbleSolitaire &game)
 
                 // Set transformation
                 glm::mat4 model = glm::mat4(1.0f);
-                model = glm::translate(model, glm::vec3(x, y, 0.1f));
+                model = glm::translate(model, glm::vec3(x, y, currentTheme.MARBLE_Z_POSITION));
                 model = glm::scale(model, glm::vec3(marbleSize, marbleSize, 1.0f));
                 // squareShader.setMat4("transform", model);
                 // // Alternate colors for debugging
@@ -274,7 +317,7 @@ void Renderer::renderMarbles(const MarbleSolitaire &game)
                 circleShader.setMat4("transform", model);
 
                 // // Set marble color to bright blue (different color than squares)
-                circleShader.setVec4("color", glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+                circleShader.setVec4("color", currentTheme.MARBLE_COLOR);
 
                 // // Draw circle
                 glBindVertexArray(circleVAO);
@@ -290,51 +333,53 @@ void Renderer::renderMarbles(const MarbleSolitaire &game)
 }
 void Renderer::renderSelection(const MarbleSolitaire &game)
 {
-    // Get selected position
     Position selected = game.getSelectedPosition();
 
     // If no selection, just return
-    if (!selected.isValid())
-    {
+    if (!selected.isValid()) {
         return;
     }
 
-    // Remove debug output that's flooding your console
-    // std::cout << "Rendering selection at position: (" << selected.row << ", " << selected.col << ")" << std::endl;
-
-    // Use orthographic projection for 2D rendering
+    // Use orthographic projection
     glm::mat4 projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f);
 
     // Calculate cell size based on board size
-    float cellSize = 1.6f / game.getBoardSize();
+    float cellSize = currentTheme.BOARD_WIDTH / game.getBoardSize();
 
     // Calculate position
-    float x = -0.8f + cellSize * selected.col + cellSize * 0.5f;
-    float y = 0.8f - cellSize * selected.row - cellSize * 0.5f;
+    float x = currentTheme.BOARD_ORIGIN_X + cellSize * selected.col + cellSize * 0.5f;
+    float y = currentTheme.BOARD_ORIGIN_Y - cellSize * selected.row - cellSize * 0.5f;
 
-    // Use square shader for drawing selection highlight
-    squareShader.use();
-    squareShader.setMat4("projection", projection);
-
-    // Set transformation
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(x, y, 0.0f));
-    model = glm::scale(model, glm::vec3(cellSize * 0.95f, cellSize * 0.95f, 1.0f));
-    squareShader.setMat4("transform", model);
-
-    // Set highlight color - bright yellow with high opacity
-    squareShader.setVec4("color", glm::vec4(1.0f, 1.0f, 0.0f, 0.7f));
-
-    // Draw highlight with blending
+    // Enable blending for transparent highlight
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glBindVertexArray(squareVAO);
+    // Use the highlight shader
+    highlightShader.use();
+    highlightShader.setMat4("projection", projection);
+
+    // Make highlight slightly larger than the cell
+    float highlightScale = cellSize * (currentTheme.CELL_SCALE_FACTOR + 0.05f);
+
+    // Position highlight slightly above the board but below marbles
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(x, y, 0.05f));
+    model = glm::scale(model, glm::vec3(highlightScale, highlightScale, 1.0f));
+    highlightShader.setMat4("transform", model);
+
+    // Set a bright, semi-transparent highlight color
+    // If the theme color is too subtle, override it with a brighter one
+    glm::vec4 highlightColor = currentTheme.HIGHLIGHT_COLOR;
+    if (highlightColor.a < 0.4f) highlightColor.a = 0.4f;  // Ensure minimum opacity
+    highlightShader.setVec4("color", highlightColor);
+
+    // Draw the highlight using either dedicated VAO or square VAO
+    glBindVertexArray(highlightVAO != 0 ? highlightVAO : squareVAO);
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
+    // Disable blending
     glDisable(GL_BLEND);
 }
-
 void Renderer::renderGameInfo(const MarbleSolitaire &game)
 {
     // Game info is rendered via ImGui in renderUI

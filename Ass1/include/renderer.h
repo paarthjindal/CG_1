@@ -7,7 +7,7 @@
 
 #include "game.h"
 #include "shader.h"
-
+#include "theme.h"
 class Renderer {
 public:
     Renderer(int windowWidth, int windowHeight);
@@ -19,6 +19,11 @@ public:
     // Main rendering functions
     void renderGame(const MarbleSolitaire& game);
     void renderUI(const MarbleSolitaire& game);
+    void renderBoard(const MarbleSolitaire& game);
+    void renderMarbles(const MarbleSolitaire& game);
+    void renderSelection(const MarbleSolitaire& game);
+    void renderGameInfo(const MarbleSolitaire& game);
+    void setTheme(const Theme& theme);
 
     // Helper functions
     glm::vec2 windowToBoard(int x, int y, const MarbleSolitaire& game);
@@ -30,18 +35,17 @@ private:
     // OpenGL objects
     GLuint squareVAO, squareVBO;
     GLuint circleVAO, circleVBO;
+    GLuint highlightVAO, highlightVBO;
 
     // Shaders
     Shader squareShader;
     Shader circleShader;
+    Shader highlightShader;
 
     // Initialize geometry
     void createSquare();
     void createCircle();
-
+    void createHighlight();
     // Rendering helpers
-    void renderBoard(const MarbleSolitaire& game);
-    void renderMarbles(const MarbleSolitaire& game);
-    void renderSelection(const MarbleSolitaire& game);
-    void renderGameInfo(const MarbleSolitaire& game);
+
 };

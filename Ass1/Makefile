@@ -16,7 +16,8 @@ IMGUI_SRC = external/imgui/imgui.cpp \
 SRC = src/main.cpp \
 	  src/game.cpp \
 	  src/renderer.cpp \
-	  src/shader.cpp
+	  src/shader.cpp \
+	  src/theme.cpp 
 
 OBJ = $(SRC:.cpp=.o) $(IMGUI_SRC:.cpp=.o)
 

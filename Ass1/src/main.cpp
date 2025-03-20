@@ -10,6 +10,8 @@
 
 #include "../include/game.h"
 #include "../include/renderer.h"
+#include "../include/theme.h"  // Add theme header
+
 
 // Window dimensions and title
 const char *WINDOW_TITLE = "Marble Solitaire";
@@ -29,6 +31,7 @@ void initializeGLFW();
 void initializeImGui();
 void mainLoop();
 void cleanup();
+void applyTheme(const Theme& theme);
 
 int main()
 {
@@ -51,11 +54,24 @@ int main()
 
     // Main game loop
     mainLoop();
+    applyTheme(Theme::classicWood());
 
     // Cleanup
     cleanup();
 
     return 0;
+}
+
+// Apply a theme to both renderer and global settings
+void applyTheme(const Theme& theme) {
+    // Set the theme in the renderer
+    renderer->setTheme(theme);
+
+    // Also update any global theme settings
+    currentTheme = theme;
+
+    std::cout << "Theme applied: " << (theme.MARBLE_COLOR.r > 0.5f ? "Classic Wood" :
+                                     (theme.MARBLE_COLOR.g > 0.5f ? "Modern" : "Royal")) << std::endl;
 }
 
 void initializeGLFW()
@@ -130,14 +146,44 @@ void mainLoop()
         ImGui::NewFrame();
 
         // Clear the framebuffer
-        glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
+         // Clear the framebuffer with theme background color
+         glClearColor(
+            currentTheme.BACKGROUND_COLOR.r,
+            currentTheme.BACKGROUND_COLOR.g,
+            currentTheme.BACKGROUND_COLOR.b,
+            currentTheme.BACKGROUND_COLOR.a
+        );
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 
         // Render game
         renderer->renderGame(*game);
 
         // Create ImGui interface
         renderer->renderUI(*game);
+
+        // Add theme selector to ImGui
+        ImGui::Begin("Theme Settings");
+
+        if (ImGui::Button("Classic Wood Theme")) {
+            applyTheme(Theme::classicWood());
+        }
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(0.76f, 0.6f, 0.42f, 1.0f), "Wood board with blue marbles");
+
+        if (ImGui::Button("Modern Theme")) {
+            applyTheme(Theme::modern());
+        }
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(0.18f, 0.8f, 0.7f, 1.0f), "Gray board with teal marbles");
+
+        if (ImGui::Button("Royal Theme")) {
+            applyTheme(Theme::royal());
+        }
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(0.9f, 0.75f, 0.1f, 1.0f), "Purple board with gold marbles");
+
+        ImGui::End();
 
         // Render ImGui
         ImGui::Render();

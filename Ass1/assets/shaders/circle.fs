@@ -16,6 +16,8 @@ void main() {
 
     // Add 3D lighting effect
     float brightness = 1.0 - (dist * 1.5);
+    float reflection = pow(1.0 - dist, 3.0) * 0.4;
+    brightness += reflection;
     brightness = max(brightness, 0.3);
 
     FragColor = color * brightness;
