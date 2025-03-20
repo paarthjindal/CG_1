@@ -87,17 +87,13 @@ void Renderer::createCircle()
 {
     std::cout << "Creating circle geometry..." << std::endl;
 
-    // Define vertices for a square
+    // Define vertices for a square with texture coordinates
     float vertices[] = {
-        -0.5f, -0.5f, // Bottom left
-        0.5f, -0.5f,  // Bottom right
-        0.5f, 0.5f,   // Top right
-        -0.5f, 0.5f   // Top left
-    };
-
-    // Define indices for a triangle fan
-    unsigned int indices[] = {
-        0, 1, 2, 3 // Counter-clockwise order
+        // Positions        // Texture Coords
+        -0.5f, -0.5f,       0.0f, 0.0f,   // Bottom left
+         0.5f, -0.5f,       1.0f, 0.0f,   // Bottom right
+         0.5f,  0.5f,       1.0f, 1.0f,   // Top right
+        -0.5f,  0.5f,       0.0f, 1.0f    // Top left
     };
 
     // Generate and bind VAO
@@ -109,17 +105,14 @@ void Renderer::createCircle()
     glBindBuffer(GL_ARRAY_BUFFER, circleVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    // Create and bind element buffer object
-    unsigned int EBO;
-    glGenBuffers(1, &EBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    // Set vertex attributes
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void *)0);
+    // Position attribute - stride is now 4 floats (position + texcoord)
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    // Unbind VBO (not EBO as it's bound to VAO)
+    // Texture coordinate attribute
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
@@ -281,7 +274,7 @@ void Renderer::renderMarbles(const MarbleSolitaire &game)
                 circleShader.setMat4("transform", model);
 
                 // // Set marble color to bright blue (different color than squares)
-                circleShader.setVec4("color", glm::vec4(0.0f, 0.4f, 1.0f, 1.0f));
+                circleShader.setVec4("color", glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
 
                 // // Draw circle
                 glBindVertexArray(circleVAO);
